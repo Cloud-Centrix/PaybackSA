@@ -2,6 +2,7 @@
   "expo": {
     "name": "PayBack SA",
     "slug": "PayBackSA",
+    "scheme": "paybacksa",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,11 +14,13 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.paybacksa.app",
       "infoPlist": {
         "NSCameraUsageDescription": "PayBack SA needs camera access to scan receipts"
       }
     },
     "android": {
+      "package": "com.paybacksa.app",
       "adaptiveIcon": {
         "backgroundColor": "#2D7987",
         "foregroundImage": "./assets/android-icon-foreground.png",
