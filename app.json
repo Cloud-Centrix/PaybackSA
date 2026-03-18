@@ -28,6 +28,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "permissions": [
+        "CAMERA",
         "CAMERA"
       ]
     },
@@ -36,6 +37,18 @@
     },
     "plugins": [
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ea369e76-f2c0-43fc-810e-1e92dd0f9476"
+      }
+    },
+    "owner": "percybosch",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ea369e76-f2c0-43fc-810e-1e92dd0f9476"
+    }
   }
 }
