@@ -4,3 +4,4 @@ export { Input } from './Input';
 export { PersonChip } from './PersonChip';
 export { EmptyState } from './EmptyState';
 export { ScreenHeader } from './ScreenHeader';
+export { PremiumGate } from './PremiumGate';

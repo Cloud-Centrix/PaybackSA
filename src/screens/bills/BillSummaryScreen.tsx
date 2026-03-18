@@ -10,8 +10,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useBillStore, useSettingsStore } from '../../store';
-import { ScreenHeader, Button, Card, Input } from '../../components';
+import { useBillStore, useSettingsStore, usePremiumStore } from '../../store';
+import { ScreenHeader, Button, Card, Input, PremiumGate } from '../../components';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius, Shadow } from '../../theme';
 import { formatCurrency } from '../../utils/helpers';
 import { calculateShares } from '../../utils/calculator';
@@ -33,6 +33,8 @@ export function BillSummaryScreen() {
     );
     const [shareTarget, setShareTarget] = useState<PersonShare | null>(null);
     const [showBalances, setShowBalances] = useState(false);
+    const { isPremium } = usePremiumStore();
+    const [showPremiumGate, setShowPremiumGate] = useState(false);
 
     const shares = useMemo(() => {
         if (!currentBill) return [];
@@ -62,6 +64,10 @@ export function BillSummaryScreen() {
 
     const handleShare = (share: PersonShare, method: 'whatsapp' | 'email' | 'native') => {
         if (!currentBill) return;
+        if (method === 'whatsapp' && !isPremium) {
+            setShowPremiumGate(true);
+            return;
+        }
         const paidByName = currentBill.paidBy?.name ?? 'Unknown';
         const message = generateShareMessage(currentBill.name, share, paidByName, settings);
         switch (method) {
@@ -79,6 +85,10 @@ export function BillSummaryScreen() {
 
     const handleGroupShare = () => {
         if (!currentBill) return;
+        if (!isPremium) {
+            setShowPremiumGate(true);
+            return;
+        }
         const paidByName = currentBill.paidBy?.name ?? 'Unknown';
         const message = generateGroupShareMessage(
             currentBill.name,
@@ -186,6 +196,7 @@ export function BillSummaryScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            <PremiumGate visible={showPremiumGate} onClose={() => setShowPremiumGate(false)} feature="WhatsApp sharing" />
             <ScreenHeader
                 title={currentBill.name}
                 subtitle="Summary"

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -6,15 +6,19 @@ import {
     ScrollView,
     KeyboardAvoidingView,
     Platform,
+    TouchableOpacity,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useSettingsStore } from '../../store';
-import { Input, Card } from '../../components';
+import { useSettingsStore, usePremiumStore } from '../../store';
+import { Input, Card, PremiumGate } from '../../components';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../theme';
 
 export function SettingsScreen() {
     const { settings, updateSettings } = useSettingsStore();
+    const { isPremium } = usePremiumStore();
+    const [showPremiumGate, setShowPremiumGate] = useState(false);
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -31,6 +35,37 @@ export function SettingsScreen() {
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
                 >
+                    {/* Premium */}
+                    {isPremium ? (
+                        <Card style={styles.premiumActiveCard}>
+                            <View style={styles.premiumActiveRow}>
+                                <Text style={styles.premiumCrown}>👑</Text>
+                                <View style={styles.premiumActiveInfo}>
+                                    <Text style={styles.premiumActiveTitle}>PayBack Premium</Text>
+                                    <Text style={styles.premiumActiveStatus}>Active — Thank you!</Text>
+                                </View>
+                            </View>
+                        </Card>
+                    ) : (
+                        <TouchableOpacity onPress={() => setShowPremiumGate(true)} activeOpacity={0.8}>
+                            <Card style={styles.premiumCard}>
+                                <View style={styles.premiumRow}>
+                                    <Text style={styles.premiumCrown}>👑</Text>
+                                    <View style={styles.premiumInfo}>
+                                        <Text style={styles.premiumTitle}>Upgrade to Premium</Text>
+                                        <Text style={styles.premiumSub}>WhatsApp sharing, OCR scanning, unlimited people</Text>
+                                    </View>
+                                    <Ionicons name="chevron-forward" size={20} color={Colors.gold} />
+                                </View>
+                                <View style={styles.premiumPriceBadge}>
+                                    <Text style={styles.premiumPrice}>R49.99</Text>
+                                </View>
+                            </Card>
+                        </TouchableOpacity>
+                    )}
+
+                    <PremiumGate visible={showPremiumGate} onClose={() => setShowPremiumGate(false)} />
+
                     {/* Personal */}
                     <Card style={styles.section}>
                         <View style={styles.sectionHeader}>
@@ -165,5 +200,70 @@ const styles = StyleSheet.create({
         marginTop: Spacing.md,
         lineHeight: 20,
         paddingHorizontal: Spacing.lg,
+    },
+    premiumCard: {
+        marginBottom: Spacing.md,
+        borderWidth: 2,
+        borderColor: Colors.gold,
+        backgroundColor: Colors.gold + '08',
+    },
+    premiumRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.md,
+    },
+    premiumCrown: {
+        fontSize: 28,
+    },
+    premiumInfo: {
+        flex: 1,
+    },
+    premiumTitle: {
+        fontSize: FontSize.md,
+        fontWeight: FontWeight.bold,
+        color: Colors.textPrimary,
+    },
+    premiumSub: {
+        fontSize: FontSize.xs,
+        color: Colors.textSecondary,
+        marginTop: 2,
+    },
+    premiumPriceBadge: {
+        alignSelf: 'flex-start',
+        backgroundColor: Colors.teal,
+        paddingVertical: Spacing.xs,
+        paddingHorizontal: Spacing.md,
+        borderRadius: BorderRadius.full,
+        marginTop: Spacing.sm,
+    },
+    premiumPrice: {
+        color: Colors.white,
+        fontSize: FontSize.sm,
+        fontWeight: FontWeight.bold,
+    },
+    premiumActiveCard: {
+        marginBottom: Spacing.md,
+        borderWidth: 2,
+        borderColor: '#25D366',
+        backgroundColor: '#25D366' + '08',
+    },
+    premiumActiveRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.md,
+    },
+    premiumActiveInfo: {
+        flex: 1,
+    },
+    premiumActiveTitle: {
+        fontSize: FontSize.md,
+        fontWeight: FontWeight.bold,
+        color: Colors.textPrimary,
+    },
+    premiumActiveStatus: {
+        fontSize: FontSize.sm,
+        color: '#25D366',
+        fontWeight: FontWeight.medium,
+        marginTop: 2,
     },
 });

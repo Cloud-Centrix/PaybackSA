@@ -11,8 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useBillStore } from '../../store';
-import { ScreenHeader, Input, Button, PersonChip, Card } from '../../components';
+import { useBillStore, usePremiumStore, FREE_PERSON_LIMIT_VALUE } from '../../store';
+import { ScreenHeader, Input, Button, PersonChip, Card, PremiumGate } from '../../components';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../theme';
 import type { Person } from '../../types';
 
@@ -22,6 +22,9 @@ export function CreateBillScreen() {
     const [billName, setBillName] = useState('');
     const [personName, setPersonName] = useState('');
     const [step, setStep] = useState<'name' | 'people' | 'payer'>('name');
+    const { isPremium, canAddPerson } = usePremiumStore();
+    const [showPremiumGate, setShowPremiumGate] = useState(false);
+    const [premiumFeature, setPremiumFeature] = useState('');
 
     const handleNameSubmit = () => {
         if (!billName.trim()) return;
@@ -31,6 +34,11 @@ export function CreateBillScreen() {
 
     const handleAddPerson = () => {
         if (!personName.trim()) return;
+        if (!canAddPerson(currentBill?.people.length ?? 0)) {
+            setPremiumFeature(`Adding more than ${FREE_PERSON_LIMIT_VALUE} people`);
+            setShowPremiumGate(true);
+            return;
+        }
         addPerson(personName.trim());
         setPersonName('');
     };
@@ -47,6 +55,11 @@ export function CreateBillScreen() {
     const handlePayerContinue = (target: 'scan' | 'manual') => {
         if (!currentBill?.paidBy) return;
         if (target === 'scan') {
+            if (!isPremium) {
+                setPremiumFeature('OCR receipt scanning');
+                setShowPremiumGate(true);
+                return;
+            }
             navigation.navigate('ScanReceipt');
         } else {
             navigation.navigate('EditItems');
@@ -56,6 +69,7 @@ export function CreateBillScreen() {
     if (step === 'name') {
         return (
             <SafeAreaView style={styles.container} edges={['top']}>
+                <PremiumGate visible={showPremiumGate} onClose={() => setShowPremiumGate(false)} feature={premiumFeature} />
                 <ScreenHeader title="New Bill" onBack={() => navigation.goBack()} />
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -91,6 +105,7 @@ export function CreateBillScreen() {
     if (step === 'payer') {
         return (
             <SafeAreaView style={styles.container} edges={['top']}>
+                <PremiumGate visible={showPremiumGate} onClose={() => setShowPremiumGate(false)} feature={premiumFeature} />
                 <ScreenHeader
                     title={currentBill?.name || 'New Bill'}
                     subtitle="Who paid?"
@@ -149,6 +164,7 @@ export function CreateBillScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            <PremiumGate visible={showPremiumGate} onClose={() => setShowPremiumGate(false)} feature={premiumFeature} />
             <ScreenHeader
                 title={currentBill?.name || 'New Bill'}
                 subtitle="Add people"

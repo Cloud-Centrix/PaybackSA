@@ -11,8 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useTripStore } from '../../store';
-import { ScreenHeader, Input, Button, PersonChip } from '../../components';
+import { useTripStore, usePremiumStore, FREE_PERSON_LIMIT_VALUE } from '../../store';
+import { ScreenHeader, Input, Button, PersonChip, PremiumGate } from '../../components';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../theme';
 import type { Person } from '../../types';
 
@@ -22,6 +22,9 @@ export function CreateTripScreen() {
     const [tripName, setTripName] = useState('');
     const [personName, setPersonName] = useState('');
     const [step, setStep] = useState<'name' | 'people' | 'payer'>('name');
+    const { canAddPerson } = usePremiumStore();
+    const [showPremiumGate, setShowPremiumGate] = useState(false);
+    const [premiumFeature, setPremiumFeature] = useState('');
 
     const handleNameSubmit = () => {
         if (!tripName.trim()) return;
@@ -31,6 +34,11 @@ export function CreateTripScreen() {
 
     const handleAddPerson = () => {
         if (!personName.trim()) return;
+        if (!canAddPerson(currentTrip?.people.length ?? 0)) {
+            setPremiumFeature(`Adding more than ${FREE_PERSON_LIMIT_VALUE} people`);
+            setShowPremiumGate(true);
+            return;
+        }
         addPerson(personName.trim());
         setPersonName('');
     };
@@ -52,6 +60,7 @@ export function CreateTripScreen() {
     if (step === 'name') {
         return (
             <SafeAreaView style={styles.container} edges={['top']}>
+                <PremiumGate visible={showPremiumGate} onClose={() => setShowPremiumGate(false)} feature={premiumFeature} />
                 <ScreenHeader title="New Trip" onBack={() => navigation.goBack()} />
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -88,6 +97,7 @@ export function CreateTripScreen() {
     if (step === 'payer') {
         return (
             <SafeAreaView style={styles.container} edges={['top']}>
+                <PremiumGate visible={showPremiumGate} onClose={() => setShowPremiumGate(false)} feature={premiumFeature} />
                 <ScreenHeader
                     title={currentTrip?.name || 'New Trip'}
                     subtitle="Who's paying?"
@@ -140,6 +150,7 @@ export function CreateTripScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            <PremiumGate visible={showPremiumGate} onClose={() => setShowPremiumGate(false)} feature={premiumFeature} />
             <ScreenHeader
                 title={currentTrip?.name || 'New Trip'}
                 subtitle="Add people"

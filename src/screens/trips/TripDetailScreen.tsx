@@ -14,9 +14,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useTripStore, calculateBalances } from '../../store';
+import { useTripStore, calculateBalances, usePremiumStore } from '../../store';
 import { useSettingsStore } from '../../store';
-import { ScreenHeader, Button, Card, Input, PersonChip } from '../../components';
+import { ScreenHeader, Button, Card, Input, PersonChip, PremiumGate } from '../../components';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../theme';
 import { formatCurrency } from '../../utils/helpers';
 import { shareNative, shareViaWhatsApp, shareViaEmail } from '../../utils/sharing';
@@ -38,6 +38,8 @@ export function TripDetailScreen() {
     const { settings } = useSettingsStore();
     const [showAddModal, setShowAddModal] = useState(false);
     const [showBalances, setShowBalances] = useState(false);
+    const { isPremium } = usePremiumStore();
+    const [showPremiumGate, setShowPremiumGate] = useState(false);
 
     // Add expense form
     const [description, setDescription] = useState('');
@@ -134,6 +136,10 @@ export function TripDetailScreen() {
 
     const handleGroupShare = () => {
         if (!currentTrip) return;
+        if (!isPremium) {
+            setShowPremiumGate(true);
+            return;
+        }
         let msg = `🏕️ *${currentTrip.name}* - Trip Summary\n\n`;
         msg += `👥 ${people.length} people · ${expenses.length} expenses\n`;
         msg += `💰 Total: ${formatCurrency(totalExpenses)}\n\n`;
@@ -190,6 +196,10 @@ export function TripDetailScreen() {
 
     const handleSharePerson = (pb: typeof personBreakdowns[0], method: 'whatsapp' | 'email' | 'native') => {
         if (!currentTrip) return;
+        if (method === 'whatsapp' && !isPremium) {
+            setShowPremiumGate(true);
+            return;
+        }
         const itemLines = pb.items
             .map((i) => {
                 const cat = getCategoryInfo(i.category);
@@ -248,6 +258,7 @@ export function TripDetailScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            <PremiumGate visible={showPremiumGate} onClose={() => setShowPremiumGate(false)} feature="WhatsApp sharing" />
             <ScreenHeader
                 title={currentTrip.name}
                 subtitle={`${expenses.length} expenses`}
