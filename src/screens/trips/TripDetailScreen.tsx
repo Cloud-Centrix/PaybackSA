@@ -276,7 +276,7 @@ export function TripDetailScreen() {
                         {currentTrip.paidBy && (
                             <Card style={styles.paidByCard}>
                                 <Ionicons name="card-outline" size={20} color={Colors.coral} />
-                                <Text style={styles.paidByLabel}>Main payer</Text>
+                                <Text style={styles.paidByLabel}>Paid by</Text>
                                 <Text style={styles.paidByName}>{currentTrip.paidBy.name}</Text>
                             </Card>
                         )}
@@ -325,7 +325,7 @@ export function TripDetailScreen() {
                         )}
 
                         {/* Per-person breakdown */}
-                        <Text style={styles.sectionTitle}>Each Person's Share</Text>
+                        <Text style={styles.sectionTitle}>Each Person Owes</Text>
                         {personBreakdowns.map((pb) => {
                             const initials = pb.person.name
                                 .split(' ')
@@ -356,19 +356,12 @@ export function TripDetailScreen() {
                                                 {pb.person.name}
                                             </Text>
                                             <Text style={styles.pbMeta}>
-                                                {isPaid ? '✅ Paid' : `${pb.items.length} expense${pb.items.length !== 1 ? 's' : ''}`}
-                                                {pb.totalPaid > 0 ? ` · Paid ${formatCurrency(pb.totalPaid)}` : ''}
+                                                {isPaid ? '✅ Paid' : `${pb.items.length} item${pb.items.length !== 1 ? 's' : ''}`}
                                             </Text>
                                         </View>
-                                        <View style={styles.pbTotalWrap}>
-                                            <Text style={[styles.pbTotal, isPaid ? styles.pbTotalPaid : pb.netOwes <= 0 && styles.pbTotalGreen]}>
-                                                {pb.netOwes > 0
-                                                    ? `Owes ${formatCurrency(pb.netOwes)}`
-                                                    : pb.netOwes < 0
-                                                        ? `Owed ${formatCurrency(Math.abs(pb.netOwes))}`
-                                                        : 'Settled'}
-                                            </Text>
-                                        </View>
+                                        <Text style={[styles.pbTotal, isPaid && styles.pbTotalPaid]}>
+                                            {formatCurrency(pb.totalOwed)}
+                                        </Text>
                                     </View>
                                     {pb.items.map((item, idx) => {
                                         const cat = CATEGORIES.find((c) => c.key === item.category) ?? CATEGORIES[6];
@@ -385,28 +378,17 @@ export function TripDetailScreen() {
                                         );
                                     })}
 
-                                    {isPremium && (
-                                        <View style={styles.shareActions}>
-                                            <TouchableOpacity
-                                                style={styles.shareBtn}
-                                                onPress={() => handleSharePerson(pb, 'whatsapp')}
-                                            >
-                                                <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
-                                                <Text style={[styles.shareBtnText, { color: '#25D366' }]}>
-                                                    WhatsApp
-                                                </Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={styles.shareBtn}
-                                                onPress={() => handleSharePerson(pb, 'native')}
-                                            >
-                                                <Ionicons name="share-outline" size={18} color={Colors.coral} />
-                                                <Text style={[styles.shareBtnText, { color: Colors.coral }]}>
-                                                    Share
-                                                </Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    )}
+                                    <View style={styles.shareActions}>
+                                        <TouchableOpacity
+                                            style={styles.shareBtn}
+                                            onPress={() => isPremium ? handleSharePerson(pb, 'whatsapp') : setShowPremiumGate(true)}
+                                        >
+                                            <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+                                            <Text style={[styles.shareBtnText, { color: '#25D366' }]}>
+                                                WhatsApp {!isPremium && '🔒'}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </View>
                                 </Card>
                             );
                         })}
@@ -416,15 +398,13 @@ export function TripDetailScreen() {
                 }
                 ListFooterComponent={
                     <View style={styles.footer}>
-                        {isPremium && (
-                            <Button
-                                title="Share Summary to Group"
-                                onPress={handleGroupShare}
-                                variant="outline"
-                                icon={<Ionicons name="logo-whatsapp" size={20} color="#25D366" />}
-                                style={styles.groupShareBtn}
-                            />
-                        )}
+                        <Button
+                            title={isPremium ? "Share Summary to Group" : "Share Summary to Group 🔒"}
+                            onPress={() => isPremium ? handleGroupShare() : setShowPremiumGate(true)}
+                            variant="outline"
+                            icon={<Ionicons name="logo-whatsapp" size={20} color="#25D366" />}
+                            style={styles.groupShareBtn}
+                        />
                         <Button
                             title="Save Trip"
                             onPress={handleSave}
@@ -718,7 +698,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
     },
     pbTotal: {
-        fontSize: FontSize.sm,
+        fontSize: FontSize.xl,
         fontWeight: FontWeight.bold,
         color: Colors.coral,
     },

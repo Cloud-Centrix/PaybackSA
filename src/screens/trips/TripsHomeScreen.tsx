@@ -85,6 +85,20 @@ export function TripsHomeScreen() {
                         <Ionicons name="trash-outline" size={18} color={Colors.error} />
                     </TouchableOpacity>
                 </View>
+                <View style={styles.peopleRow}>
+                    {trip.people.slice(0, 4).map((person) => (
+                        <View key={person.id} style={styles.miniAvatar}>
+                            <Text style={styles.miniAvatarText}>
+                                {person.name[0].toUpperCase()}
+                            </Text>
+                        </View>
+                    ))}
+                    {trip.people.length > 4 && (
+                        <Text style={styles.morePeople}>
+                            +{trip.people.length - 4}
+                        </Text>
+                    )}
+                </View>
             </Card>
         </TouchableOpacity>
     );
@@ -208,6 +222,35 @@ const styles = StyleSheet.create({
     },
     deleteBtn: {
         padding: Spacing.xs,
+    },
+    peopleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: Spacing.sm,
+        paddingTop: Spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: Colors.borderLight,
+        gap: -6,
+    },
+    miniAvatar: {
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: Colors.coral,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: Colors.white,
+    },
+    miniAvatarText: {
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+    },
+    morePeople: {
+        fontSize: FontSize.xs,
+        color: Colors.textTertiary,
+        marginLeft: Spacing.sm,
     },
     fabContainer: {
         position: 'absolute',

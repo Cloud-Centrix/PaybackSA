@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTripStore, usePremiumStore, FREE_PERSON_LIMIT_VALUE } from '../../store';
-import { ScreenHeader, Input, Button, PersonChip, PremiumGate } from '../../components';
+import { ScreenHeader, Input, Button, PersonChip, Card, PremiumGate } from '../../components';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../theme';
 import type { Person } from '../../types';
 
@@ -197,6 +197,15 @@ export function CreateTripScreen() {
                             />
                         ))}
                     </View>
+
+                    {(currentTrip?.people.length ?? 0) > 0 && (
+                        <Card style={styles.summaryCard}>
+                            <Ionicons name="people" size={20} color={Colors.coral} />
+                            <Text style={styles.summaryText}>
+                                {currentTrip!.people.length} people added
+                            </Text>
+                        </Card>
+                    )}
                 </ScrollView>
 
                 <View style={styles.bottomBar}>
@@ -304,6 +313,18 @@ const styles = StyleSheet.create({
     },
     continueButton: {
         width: '100%',
+    },
+    summaryCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+        marginTop: Spacing.lg,
+        paddingVertical: Spacing.sm + 2,
+    },
+    summaryText: {
+        fontSize: FontSize.sm,
+        color: Colors.coral,
+        fontWeight: FontWeight.medium,
     },
     payerOption: {
         flexDirection: 'row',
