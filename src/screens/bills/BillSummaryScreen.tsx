@@ -162,15 +162,6 @@ export function BillSummaryScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.shareBtn}
-                        onPress={() => handleShare(share, 'email')}
-                    >
-                        <Ionicons name="mail-outline" size={18} color={Colors.teal} />
-                        <Text style={[styles.shareBtnText, { color: Colors.teal }]}>
-                            Email
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.shareBtn}
                         onPress={() => handleShare(share, 'native')}
                     >
                         <Ionicons name="share-outline" size={18} color={Colors.coral} />

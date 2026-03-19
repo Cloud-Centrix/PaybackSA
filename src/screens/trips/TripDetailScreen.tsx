@@ -397,15 +397,6 @@ export function TripDetailScreen() {
                                         </TouchableOpacity>
                                         <TouchableOpacity
                                             style={styles.shareBtn}
-                                            onPress={() => handleSharePerson(pb, 'email')}
-                                        >
-                                            <Ionicons name="mail-outline" size={18} color={Colors.teal} />
-                                            <Text style={[styles.shareBtnText, { color: Colors.teal }]}>
-                                                Email
-                                            </Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={styles.shareBtn}
                                             onPress={() => handleSharePerson(pb, 'native')}
                                         >
                                             <Ionicons name="share-outline" size={18} color={Colors.coral} />
