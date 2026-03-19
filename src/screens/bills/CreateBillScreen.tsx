@@ -144,7 +144,7 @@ export function CreateBillScreen() {
 
                 <View style={styles.bottomBar}>
                     <Button
-                        title="Scan Receipt"
+                        title={isPremium ? 'Scan Receipt' : 'Scan Receipt 🔒'}
                         onPress={() => handlePayerContinue('scan')}
                         disabled={!currentBill?.paidBy}
                         icon={<Ionicons name="camera" size={20} color={Colors.white} />}

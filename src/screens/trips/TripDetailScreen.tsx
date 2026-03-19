@@ -392,7 +392,7 @@ export function TripDetailScreen() {
                                         >
                                             <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
                                             <Text style={[styles.shareBtnText, { color: '#25D366' }]}>
-                                                WhatsApp
+                                                WhatsApp{!isPremium && ' 🔒'}
                                             </Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity
@@ -424,7 +424,7 @@ export function TripDetailScreen() {
                 ListFooterComponent={
                     <View style={styles.footer}>
                         <Button
-                            title="Share Summary to Group"
+                            title={isPremium ? 'Share Summary to Group' : 'Share Summary to Group 🔒'}
                             onPress={handleGroupShare}
                             variant="outline"
                             icon={<Ionicons name="logo-whatsapp" size={20} color="#25D366" />}
