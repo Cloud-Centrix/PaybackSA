@@ -150,26 +150,28 @@ export function BillSummaryScreen() {
                     </View>
                 ))}
 
-                <View style={styles.shareActions}>
-                    <TouchableOpacity
-                        style={styles.shareBtn}
-                        onPress={() => handleShare(share, 'whatsapp')}
-                    >
-                        <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
-                        <Text style={[styles.shareBtnText, { color: '#25D366' }]}>
-                            WhatsApp{!isPremium && ' 🔒'}
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.shareBtn}
-                        onPress={() => handleShare(share, 'native')}
-                    >
-                        <Ionicons name="share-outline" size={18} color={Colors.coral} />
-                        <Text style={[styles.shareBtnText, { color: Colors.coral }]}>
-                            Share
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                {isPremium && (
+                    <View style={styles.shareActions}>
+                        <TouchableOpacity
+                            style={styles.shareBtn}
+                            onPress={() => handleShare(share, 'whatsapp')}
+                        >
+                            <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+                            <Text style={[styles.shareBtnText, { color: '#25D366' }]}>
+                                WhatsApp
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.shareBtn}
+                            onPress={() => handleShare(share, 'native')}
+                        >
+                            <Ionicons name="share-outline" size={18} color={Colors.coral} />
+                            <Text style={[styles.shareBtnText, { color: Colors.coral }]}>
+                                Share
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </Card>
         );
     };
@@ -276,13 +278,15 @@ export function BillSummaryScreen() {
                 }
                 ListFooterComponent={
                     <View>
-                        <Button
-                            title={isPremium ? 'Share Summary to Group' : 'Share Summary to Group 🔒'}
-                            onPress={handleGroupShare}
-                            variant="outline"
-                            icon={<Ionicons name="logo-whatsapp" size={20} color="#25D366" />}
-                            style={styles.groupShareBtn}
-                        />
+                        {isPremium && (
+                            <Button
+                                title="Share Summary to Group"
+                                onPress={handleGroupShare}
+                                variant="outline"
+                                icon={<Ionicons name="logo-whatsapp" size={20} color="#25D366" />}
+                                style={styles.groupShareBtn}
+                            />
+                        )}
                         <Button
                             title="Save Bill"
                             onPress={handleSave}
