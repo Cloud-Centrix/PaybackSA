@@ -65,7 +65,7 @@ export default function App() {
     const initRevenueCat = async () => {
       if (Platform.OS === 'web') return;
       Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-      Purchases.configure({ apiKey: 'test_RTnOBkSYMDwhYfOtcwfcOgKyyHM' });
+      Purchases.configure({ apiKey: 'goog_IpHYEmLcYkbgHzONdiPSVTxdDJY' });
     };
     initRevenueCat();
   }, []);
