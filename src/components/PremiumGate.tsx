@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,7 @@ import {
     Modal,
     TouchableOpacity,
     Alert,
+    ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../theme';
@@ -26,24 +27,41 @@ const PREMIUM_FEATURES = [
 ];
 
 export function PremiumGate({ visible, onClose, feature }: PremiumGateProps) {
-    const { unlock } = usePremiumStore();
+    const { purchasePremium, restore } = usePremiumStore();
+    const [loading, setLoading] = useState(false);
 
-    const handleUpgrade = () => {
-        // TODO: Replace with RevenueCat / expo-in-app-purchases
-        Alert.alert(
-            'PayBack Premium',
-            'In-app purchases will be available once the app is published. For now, enjoy premium for free!',
-            [
-                {
-                    text: 'Activate Premium',
-                    onPress: () => {
-                        unlock();
-                        onClose();
-                    },
-                },
-                { text: 'Not Now', style: 'cancel' },
-            ]
-        );
+    const handleUpgrade = async () => {
+        setLoading(true);
+        try {
+            const success = await purchasePremium();
+            if (success) {
+                Alert.alert('Welcome! 🎉', 'You now have PayBack Premium!');
+                onClose();
+            } else {
+                Alert.alert('Purchase Failed', 'Could not complete the purchase. Please try again.');
+            }
+        } catch {
+            Alert.alert('Error', 'Something went wrong. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRestore = async () => {
+        setLoading(true);
+        try {
+            const success = await restore();
+            if (success) {
+                Alert.alert('Restored! 🎉', 'Your premium access has been restored.');
+                onClose();
+            } else {
+                Alert.alert('Nothing Found', 'No previous purchase found for this account.');
+            }
+        } catch {
+            Alert.alert('Error', 'Could not restore purchases. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -89,9 +107,19 @@ export function PremiumGate({ visible, onClose, feature }: PremiumGateProps) {
                     </View>
 
                     {/* Upgrade button */}
-                    <TouchableOpacity style={styles.upgradeBtn} onPress={handleUpgrade}>
-                        <Ionicons name="star" size={20} color={Colors.white} />
-                        <Text style={styles.upgradeBtnText}>Upgrade to Premium</Text>
+                    <TouchableOpacity style={styles.upgradeBtn} onPress={handleUpgrade} disabled={loading}>
+                        {loading ? (
+                            <ActivityIndicator color={Colors.white} />
+                        ) : (
+                            <>
+                                <Ionicons name="star" size={20} color={Colors.white} />
+                                <Text style={styles.upgradeBtnText}>Upgrade to Premium</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={handleRestore} style={styles.notNowBtn} disabled={loading}>
+                        <Text style={styles.restoreText}>Restore Purchase</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={onClose} style={styles.notNowBtn}>
@@ -212,5 +240,10 @@ const styles = StyleSheet.create({
     notNowText: {
         color: Colors.textTertiary,
         fontSize: FontSize.sm,
+    },
+    restoreText: {
+        color: Colors.teal,
+        fontSize: FontSize.sm,
+        fontWeight: FontWeight.medium,
     },
 });

@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { AppNavigator } from './src/navigation';
 
 class ErrorBoundary extends React.Component<
@@ -60,6 +61,15 @@ const ebStyles = StyleSheet.create({
 });
 
 export default function App() {
+  useEffect(() => {
+    const initRevenueCat = async () => {
+      if (Platform.OS === 'web') return;
+      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+      Purchases.configure({ apiKey: 'test_RTnOBkSYMDwhYfOtcwfcOgKyyHM' });
+    };
+    initRevenueCat();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
