@@ -37,13 +37,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-asset',
-    [
-      '@sentry/react-native/expo',
-      {
-        organization: 'cloud-centrix',
-        project: 'paybacksa',
-      },
-    ],
   ],
   extra: {
     revenueCatAndroidKey: process.env.REVENUCAT_ANDROID_API_KEY,
