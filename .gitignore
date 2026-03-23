@@ -28,6 +28,19 @@ yarn-error.*
 
 # macOS
 .DS_Store
+
+# Environment variables
+.env
+.env.local
+.env*.local
+
+# Secrets
+google-service-account.json
+
+# Generated files
+*.pptx
+generate_pptx.py
+COMPANY-APP-GUIDE.md
 *.pem
 
 # local env files

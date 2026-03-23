@@ -11,7 +11,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useBillStore, usePremiumStore, FREE_PERSON_LIMIT_VALUE } from '../../store';
+import { useBillStore, usePremiumStore } from '../../store';
+
+const FREE_PERSON_LIMIT = 3;
 import { ScreenHeader, Input, Button, PersonChip, Card, PremiumGate } from '../../components';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../theme';
 import type { Person } from '../../types';
@@ -35,7 +37,7 @@ export function CreateBillScreen() {
     const handleAddPerson = () => {
         if (!personName.trim()) return;
         if (!canAddPerson(currentBill?.people.length ?? 0)) {
-            setPremiumFeature(`Adding more than ${FREE_PERSON_LIMIT_VALUE} people`);
+            setPremiumFeature(`Adding more than ${FREE_PERSON_LIMIT} people`);
             setShowPremiumGate(true);
             return;
         }

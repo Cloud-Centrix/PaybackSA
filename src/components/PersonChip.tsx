@@ -40,7 +40,12 @@ export function PersonChip({
             </View>
             <Text style={[styles.name, selected && styles.nameSelected]}>{name}</Text>
             {onRemove && (
-                <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <TouchableOpacity
+                    onPress={onRemove}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${name}`}
+                >
                     <Ionicons name="close-circle" size={18} color={Colors.textTertiary} />
                 </TouchableOpacity>
             )}
@@ -49,7 +54,13 @@ export function PersonChip({
 
     if (onPress) {
         return (
-            <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+            <TouchableOpacity
+                onPress={onPress}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`${name}${selected ? ', selected' : ''}`}
+                accessibilityState={{ selected }}
+            >
                 {chipContent}
             </TouchableOpacity>
         );

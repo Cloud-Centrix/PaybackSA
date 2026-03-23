@@ -22,6 +22,8 @@ export function Input({ label, containerStyle, error, style, ...props }: InputPr
             <RNTextInput
                 style={[styles.input, error && styles.errorInput, style]}
                 placeholderTextColor={Colors.textTertiary}
+                accessibilityLabel={label || props.placeholder}
+                accessibilityState={{ disabled: !props.editable && props.editable !== undefined }}
                 {...props}
             />
             {error && <Text style={styles.errorText}>{error}</Text>}

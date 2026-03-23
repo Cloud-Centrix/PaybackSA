@@ -69,7 +69,7 @@ export function PremiumGate({ visible, onClose, feature }: PremiumGateProps) {
             <View style={styles.overlay}>
                 <View style={styles.modal}>
                     {/* Close button */}
-                    <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+                    <TouchableOpacity style={styles.closeBtn} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
                         <Ionicons name="close" size={24} color={Colors.textTertiary} />
                     </TouchableOpacity>
 
@@ -107,7 +107,7 @@ export function PremiumGate({ visible, onClose, feature }: PremiumGateProps) {
                     </View>
 
                     {/* Upgrade button */}
-                    <TouchableOpacity style={styles.upgradeBtn} onPress={handleUpgrade} disabled={loading}>
+                    <TouchableOpacity style={styles.upgradeBtn} onPress={handleUpgrade} disabled={loading} accessibilityRole="button" accessibilityLabel="Upgrade to Premium" accessibilityState={{ disabled: loading, busy: loading }}>
                         {loading ? (
                             <ActivityIndicator color={Colors.white} />
                         ) : (
@@ -118,11 +118,11 @@ export function PremiumGate({ visible, onClose, feature }: PremiumGateProps) {
                         )}
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={handleRestore} style={styles.notNowBtn} disabled={loading}>
+                    <TouchableOpacity onPress={handleRestore} style={styles.notNowBtn} disabled={loading} accessibilityRole="button" accessibilityLabel="Restore Purchase" accessibilityState={{ disabled: loading }}>
                         <Text style={styles.restoreText}>Restore Purchase</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={onClose} style={styles.notNowBtn}>
+                    <TouchableOpacity onPress={onClose} style={styles.notNowBtn} accessibilityRole="button" accessibilityLabel="Not now">
                         <Text style={styles.notNowText}>Not now</Text>
                     </TouchableOpacity>
                 </View>

@@ -7,21 +7,43 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "env": {
+        "REVENUCAT_ANDROID_API_KEY": "goog_IpHYEmLcYkbgHzONdiPSVTxdDJY",
+        "REVENUCAT_IOS_API_KEY": "appl_REPLACE_WITH_YOUR_IOS_KEY"
+      }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "REVENUCAT_ANDROID_API_KEY": "goog_IpHYEmLcYkbgHzONdiPSVTxdDJY",
+        "REVENUCAT_IOS_API_KEY": "appl_REPLACE_WITH_YOUR_IOS_KEY"
       }
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "REVENUCAT_ANDROID_API_KEY": "goog_IpHYEmLcYkbgHzONdiPSVTxdDJY",
+        "REVENUCAT_IOS_API_KEY": "appl_REPLACE_WITH_YOUR_IOS_KEY"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "internal"
+      },
+      "ios": {
+        "appleId": "REPLACE_WITH_YOUR_APPLE_ID",
+        "ascAppId": "REPLACE_WITH_YOUR_ASC_APP_ID",
+        "appleTeamId": "REPLACE_WITH_YOUR_TEAM_ID"
+      }
+    }
   }
 }

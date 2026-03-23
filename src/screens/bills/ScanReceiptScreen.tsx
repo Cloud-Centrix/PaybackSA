@@ -62,13 +62,22 @@ export function ScanReceiptScreen() {
 
     const processImage = async (_uri: string) => {
         setProcessing(true);
-        // In production, send the image to an OCR API (Google Vision, AWS Textract).
-        // For now, we simulate OCR with sample data.
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        const items = simulateOCR();
-        setItems(items);
-        setProcessing(false);
-        navigation.navigate('EditItems');
+        try {
+            // TODO: Replace with real OCR API (Google Cloud Vision / AWS Textract)
+            // For v1.0 launch, OCR is simulated. Users can still add items manually.
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            const items = simulateOCR();
+            setItems(items);
+            navigation.navigate('EditItems');
+        } catch {
+            Alert.alert(
+                'Scan Failed',
+                'Could not read the receipt. Please add items manually.',
+                [{ text: 'Add Manually', onPress: () => navigation.navigate('EditItems') }]
+            );
+        } finally {
+            setProcessing(false);
+        }
     };
 
     const handleSkip = () => {

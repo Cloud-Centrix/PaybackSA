@@ -5,7 +5,18 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+import * as Sentry from '@sentry/react-native';
+import Constants from 'expo-constants';
 import { AppNavigator } from './src/navigation';
+import { usePremiumStore } from './src/store/premiumStore';
+
+const extra = Constants.expoConfig?.extra ?? {};
+
+Sentry.init({
+  dsn: extra.sentryDsn || '',
+  enabled: !__DEV__,
+  tracesSampleRate: 0.2,
+});
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -61,11 +72,21 @@ const ebStyles = StyleSheet.create({
 });
 
 export default function App() {
+  const checkEntitlement = usePremiumStore((s) => s.checkEntitlement);
+
   useEffect(() => {
     const initRevenueCat = async () => {
       if (Platform.OS === 'web') return;
-      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
-      Purchases.configure({ apiKey: 'goog_IpHYEmLcYkbgHzONdiPSVTxdDJY' });
+      Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.VERBOSE : LOG_LEVEL.ERROR);
+      const apiKey =
+        Platform.OS === 'ios'
+          ? extra.revenueCatIosKey
+          : extra.revenueCatAndroidKey;
+      if (apiKey) {
+        Purchases.configure({ apiKey });
+        // Sync premium status in background (uses cache if offline)
+        checkEntitlement();
+      }
     };
     initRevenueCat();
   }, []);
