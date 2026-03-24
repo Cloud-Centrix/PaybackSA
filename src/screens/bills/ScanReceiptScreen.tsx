@@ -63,21 +63,29 @@ export function ScanReceiptScreen() {
     const processImage = async (uri: string) => {
         setProcessing(true);
         try {
-            const items = await scanReceipt(uri);
+            const { items, rawText } = await scanReceipt(uri);
             if (items.length === 0) {
                 Alert.alert(
                     'No Items Found',
-                    'Could not find items on the receipt. You can add them manually.',
-                    [{ text: 'Add Manually', onPress: () => navigation.navigate('EditItems') }]
+                    'Raw OCR text:\n\n' + rawText,
+                    [
+                        { text: 'Add Manually', onPress: () => navigation.navigate('EditItems') },
+                    ]
                 );
                 return;
             }
+            // Debug: show raw text + parsed items so we can verify
+            Alert.alert(
+                `Found ${items.length} items`,
+                'Raw OCR text:\n\n' + rawText,
+                [{ text: 'Continue', onPress: () => {} }]
+            );
             setItems(items);
             navigation.navigate('EditItems');
-        } catch {
+        } catch (err: any) {
             Alert.alert(
                 'Scan Failed',
-                'Could not read the receipt. Please add items manually.',
+                err?.message || 'Could not read the receipt. Please add items manually.',
                 [{ text: 'Add Manually', onPress: () => navigation.navigate('EditItems') }]
             );
         } finally {
