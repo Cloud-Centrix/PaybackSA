@@ -14,7 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useBillStore } from '../../store';
 import { ScreenHeader, Button } from '../../components';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../theme';
-import { simulateOCR } from '../../utils/ocr';
+import { scanReceipt } from '../../utils/ocr';
 
 export function ScanReceiptScreen() {
     const navigation = useNavigation<any>();
@@ -60,13 +60,18 @@ export function ScanReceiptScreen() {
         }
     };
 
-    const processImage = async (_uri: string) => {
+    const processImage = async (uri: string) => {
         setProcessing(true);
         try {
-            // TODO: Replace with real OCR API (Google Cloud Vision / AWS Textract)
-            // For v1.0 launch, OCR is simulated. Users can still add items manually.
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-            const items = simulateOCR();
+            const items = await scanReceipt(uri);
+            if (items.length === 0) {
+                Alert.alert(
+                    'No Items Found',
+                    'Could not find items on the receipt. You can add them manually.',
+                    [{ text: 'Add Manually', onPress: () => navigation.navigate('EditItems') }]
+                );
+                return;
+            }
             setItems(items);
             navigation.navigate('EditItems');
         } catch {

@@ -42,6 +42,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     revenueCatAndroidKey: process.env.REVENUCAT_ANDROID_API_KEY,
     revenueCatIosKey: process.env.REVENUCAT_IOS_API_KEY,
     sentryDsn: process.env.SENTRY_DSN,
+    googleCloudVisionKey: process.env.GOOGLE_CLOUD_VISION_API_KEY,
     eas: {
       projectId: 'ea369e76-f2c0-43fc-810e-1e92dd0f9476',
     },

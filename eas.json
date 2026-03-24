@@ -10,7 +10,8 @@
       "channel": "development",
       "env": {
         "REVENUCAT_ANDROID_API_KEY": "goog_IpHYEmLcYkbgHzONdiPSVTxdDJY",
-        "REVENUCAT_IOS_API_KEY": "appl_REPLACE_WITH_YOUR_IOS_KEY"
+        "REVENUCAT_IOS_API_KEY": "appl_REPLACE_WITH_YOUR_IOS_KEY",
+        "GOOGLE_CLOUD_VISION_API_KEY": "AIzaSyBe1AwnCnjoSMGajD-wGnnYBFQYQQsMZfA"
       }
     },
     "preview": {
@@ -21,7 +22,8 @@
       },
       "env": {
         "REVENUCAT_ANDROID_API_KEY": "goog_IpHYEmLcYkbgHzONdiPSVTxdDJY",
-        "REVENUCAT_IOS_API_KEY": "appl_REPLACE_WITH_YOUR_IOS_KEY"
+        "REVENUCAT_IOS_API_KEY": "appl_REPLACE_WITH_YOUR_IOS_KEY",
+        "GOOGLE_CLOUD_VISION_API_KEY": "AIzaSyBe1AwnCnjoSMGajD-wGnnYBFQYQQsMZfA"
       }
     },
     "production": {
@@ -29,7 +31,8 @@
       "channel": "production",
       "env": {
         "REVENUCAT_ANDROID_API_KEY": "goog_IpHYEmLcYkbgHzONdiPSVTxdDJY",
-        "REVENUCAT_IOS_API_KEY": "appl_REPLACE_WITH_YOUR_IOS_KEY"
+        "REVENUCAT_IOS_API_KEY": "appl_REPLACE_WITH_YOUR_IOS_KEY",
+        "GOOGLE_CLOUD_VISION_API_KEY": "AIzaSyBe1AwnCnjoSMGajD-wGnnYBFQYQQsMZfA"
       }
     }
   },
