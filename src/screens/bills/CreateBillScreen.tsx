@@ -57,11 +57,12 @@ export function CreateBillScreen() {
     const handlePayerContinue = (target: 'scan' | 'manual') => {
         if (!currentBill?.paidBy) return;
         if (target === 'scan') {
-            if (!isPremium) {
-                setPremiumFeature('OCR receipt scanning');
-                setShowPremiumGate(true);
-                return;
-            }
+            // TODO: Re-enable premium check before production
+            // if (!isPremium) {
+            //     setPremiumFeature('OCR receipt scanning');
+            //     setShowPremiumGate(true);
+            //     return;
+            // }
             navigation.navigate('ScanReceipt');
         } else {
             navigation.navigate('EditItems');
@@ -146,7 +147,7 @@ export function CreateBillScreen() {
 
                 <View style={styles.bottomBar}>
                     <Button
-                        title={isPremium ? 'Scan Receipt' : 'Scan Receipt 🔒'}
+                        title={'Scan Receipt'}
                         onPress={() => handlePayerContinue('scan')}
                         disabled={!currentBill?.paidBy}
                         icon={<Ionicons name="camera" size={20} color={Colors.white} />}
