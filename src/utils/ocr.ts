@@ -78,10 +78,8 @@ export async function scanReceipt(imageUri: string): Promise<BillItem[]> {
 
 /**
  * Parse raw OCR text lines into bill items.
- * Handles common receipt formats:
- *   - "Item name    R12.50"
- *   - "2x Item      25.00"
- *   - "Item name ... 12.50"
+ * Optimised for South African receipts — filters out headers, footers,
+ * addresses, VAT lines, totals, payment info, and other non-item text.
  */
 export function parseReceiptText(rawText: string): BillItem[] {
     const lines = rawText.split('\n').filter((l) => l.trim().length > 0);
@@ -90,10 +88,10 @@ export function parseReceiptText(rawText: string): BillItem[] {
     for (const line of lines) {
         const trimmed = line.trim();
 
-        // Skip common header/footer lines
-        if (isHeaderOrFooter(trimmed)) continue;
+        // Skip lines that are clearly not items
+        if (isNonItemLine(trimmed)) continue;
 
-        // Try to extract an item and price from each line
+        // Try to extract an item and price
         const parsed = extractItemAndPrice(trimmed);
         if (parsed) {
             items.push({
@@ -108,69 +106,161 @@ export function parseReceiptText(rawText: string): BillItem[] {
     return items;
 }
 
-function isHeaderOrFooter(line: string): boolean {
-    const lower = line.toLowerCase();
+/**
+ * Comprehensive filter for non-item lines on SA receipts.
+ */
+function isNonItemLine(line: string): boolean {
+    const lower = line.toLowerCase().trim();
+
+    // Too short to be an item (e.g. "R", "1", "x")
+    if (lower.length < 3) return true;
+
+    // Lines that are just numbers, dates, or times
+    if (/^\d[\d\s/\-.:,]*$/.test(lower)) return true;
+
+    // Lines that look like dates: 24/03/2026, 2026-03-24, 24 Mar 2026
+    if (/\d{1,4}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(lower)) return true;
+
+    // Lines that look like times: 14:30, 2:30 PM
+    if (/^\d{1,2}:\d{2}(\s*(am|pm))?\s*$/.test(lower)) return true;
+
+    // Phone numbers
+    if (/^[\d\s\+\(\)\-]{7,}$/.test(lower)) return true;
+
+    // Skip patterns — common receipt headers, footers, and metadata
     const skipPatterns = [
-        'tax invoice',
-        'vat',
-        'subtotal',
-        'sub total',
+        // Store info
+        'tax invoice', 'invoice', 'receipt', 'slip', 'docket',
+        'store', 'branch', 'shop',
+        // Address & contact
+        'tel:', 'tel ', 'phone', 'fax', 'address', 'street', 'road',
+        'ave ', 'avenue', 'drive', 'centre', 'center', 'mall',
+        'www.', 'http', '.co.za', '.com', '@',
+        // Tax
+        'vat no', 'vat reg', 'vat:', 'tax:', 'incl vat', 'excl vat',
+        'vat amount', 'tax total', 'vat total',
+        // Totals & subtotals
+        'subtotal', 'sub total', 'sub-total', 'nett total',
+        'grand total', 'amount due', 'balance due',
+        'rounding', 'round',
+        // Payment
+        'cash', 'card', 'visa', 'mastercard', 'debit', 'credit',
+        'eft', 'payment', 'paid', 'tender', 'change due', 'change:',
+        'amount tendered', 'auth code', 'ref no', 'reference',
+        'transaction', 'approved',
+        // Footer
+        'thank you', 'thanks', 'please come', 'visit us',
+        'welcome', 'enjoy', 'have a',
+        // Employee/service
+        'server', 'waiter', 'cashier', 'operator', 'served by',
+        'table', 'cover', 'seat',
+        // Date/time labels
+        'date:', 'time:', 'date :', 'time :',
+        // Bill structure
+        'qty', 'quantity', 'description', 'price', 'amount',
+        'item', '----', '====', '****',
+        // Discounts
+        'discount', 'promo', 'loyalty', 'reward', 'saving',
+        // Totals (standalone words)
         'total',
-        'change',
-        'cash',
-        'card',
-        'visa',
-        'mastercard',
-        'thank you',
-        'tel:',
-        'tel ',
-        'phone',
-        'address',
-        'receipt',
-        'invoice',
-        'date:',
-        'time:',
-        'table',
-        'server',
-        'waiter',
-        'cashier',
-        'payment',
-        'balance',
     ];
-    return skipPatterns.some((p) => lower.includes(p));
+
+    if (skipPatterns.some((p) => lower.includes(p))) return true;
+
+    // Skip if line starts with common non-item prefixes
+    const skipPrefixes = [
+        'reg ', 'reg:', 'till', 'pos ', 'order',
+        'check', 'bill no', 'bill:', 'no.', 'no:',
+    ];
+    if (skipPrefixes.some((p) => lower.startsWith(p))) return true;
+
+    // Skip lines that are all caps and have no numbers (likely headers)
+    if (/^[A-Z\s]{10,}$/.test(line.trim()) && !/\d/.test(line)) return true;
+
+    return false;
 }
 
 function extractItemAndPrice(
     line: string
 ): { name: string; price: number } | null {
-    // Pattern: capture everything before the last number on the line
-    // Matches: "Burger     R45.00", "Coke 2x   25.00", "Pizza...35.50"
-    const match = line.match(
-        /^(.+?)\s*[.…]*\s*R?\s*(\d+[.,]\d{2})\s*$/i
-    );
+    // Clean up common OCR artifacts
+    const cleaned = line
+        .replace(/[|]/g, '')  // pipe chars from column alignment
+        .replace(/\s{3,}/g, '  ')  // normalize excessive spaces
+        .trim();
 
-    if (match) {
-        const name = match[1]
-            .replace(/[.…]+$/, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-        const price = parsePrice(match[2]);
-        if (name.length > 0 && price > 0) {
-            return { name, price };
-        }
+    // Pattern 1: "Item name    R 45.00" or "Item name    R45,00" or "Item name  45.00"
+    const match1 = cleaned.match(
+        /^(.+?)\s{2,}[.…]*\s*R?\s*(\d+[.,]\d{2})\s*$/i
+    );
+    if (match1) {
+        const result = validateAndReturn(match1[1], match1[2]);
+        if (result) return result;
     }
 
-    // Fallback: try to find any price-like number
-    const fallback = line.match(/^(.+?)\s+(\d+[.,]\d{2})\s*$/);
-    if (fallback) {
-        const name = fallback[1].replace(/\s+/g, ' ').trim();
-        const price = parsePrice(fallback[2]);
-        if (name.length > 1 && price > 0) {
-            return { name, price };
-        }
+    // Pattern 2: "Item name...R12.50" or "Item name ... 12.50" (dot leaders)
+    const match2 = cleaned.match(
+        /^(.+?)\s*[.…]{2,}\s*R?\s*(\d+[.,]\d{2})\s*$/i
+    );
+    if (match2) {
+        const result = validateAndReturn(match2[1], match2[2]);
+        if (result) return result;
+    }
+
+    // Pattern 3: "2 x Burger  89.90" or "2x Burger  89.90" (quantity prefix)
+    const match3 = cleaned.match(
+        /^\d+\s*[xX×]\s*(.+?)\s{2,}R?\s*(\d+[.,]\d{2})\s*$/
+    );
+    if (match3) {
+        const result = validateAndReturn(match3[1], match3[2]);
+        if (result) return result;
+    }
+
+    // Pattern 4: "Burger R45.00" (single space + R prefix, must have R)
+    const match4 = cleaned.match(
+        /^(.+?)\s+R\s*(\d+[.,]\d{2})\s*$/i
+    );
+    if (match4) {
+        const result = validateAndReturn(match4[1], match4[2]);
+        if (result) return result;
+    }
+
+    // Pattern 5: Fallback — anything followed by a number at end
+    const match5 = cleaned.match(/^(.+?)\s+(\d+[.,]\d{2})\s*$/);
+    if (match5) {
+        const result = validateAndReturn(match5[1], match5[2]);
+        if (result) return result;
     }
 
     return null;
+}
+
+function validateAndReturn(
+    rawName: string,
+    rawPrice: string
+): { name: string; price: number } | null {
+    const name = rawName
+        .replace(/[.…]+$/, '')      // trailing dots
+        .replace(/^\d+\s*[xX×]\s*/, '') // leading quantity "2x "
+        .replace(/\s+/g, ' ')       // normalize spaces
+        .replace(/^[\s\-*#]+/, '')   // leading dashes/asterisks
+        .trim();
+
+    const price = parsePrice(rawPrice);
+
+    // Name must be at least 2 chars and price must be reasonable (R0.50 - R9999)
+    if (name.length < 2 || price <= 0 || price > 9999) return null;
+
+    // Skip if name is just numbers
+    if (/^\d+$/.test(name)) return null;
+
+    // Skip if name looks like a total/subtotal that slipped through
+    const lowerName = name.toLowerCase();
+    if (['total', 'subtotal', 'vat', 'tax', 'change', 'cash', 'card'].includes(lowerName)) {
+        return null;
+    }
+
+    return { name, price };
 }
 
 /**
