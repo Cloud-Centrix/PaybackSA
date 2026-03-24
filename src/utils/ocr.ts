@@ -80,165 +80,179 @@ export async function scanReceipt(imageUri: string): Promise<{ items: BillItem[]
 /**
  * Parse raw OCR text into bill items.
  *
- * Handles TWO common SA receipt layouts:
+ * Block-based approach that handles multiple SA receipt formats:
  *
- * **Multi-line** (supermarkets like Spar, Checkers, Pick n Pay, Woolworths):
- *   SASKO WHITE BREAD 700G        ← item name
- *   2 @ 16.99          33.98      ← qty × unit price → line total
+ * **Block format** (Checkers, Spar, Pick n Pay, Woolworths):
+ *   Nuveg Frozen Butternut with Cinnamon   ← name (1+ lines)
+ *   R 59.99                                 ← unit price
+ *   R 59.99                                 ← line total
+ *   Qty 1                                   ← quantity
  *
- * **Single-line** (restaurants, cafés):
+ * **Inline format** (restaurants, cafés):
  *   Burger              R89.90
  *
+ * **Qty-line format** (Spar-style):
+ *   SASKO WHITE BREAD 700G
+ *   2 @ 16.99          33.98
+ *
  * Strategy:
- * 1. Walk every line looking for a price at the end.
- * 2. If the line starts with a quantity indicator (e.g. "2 @", "1x"),
- *    grab the item name from the previous non-price line.
- * 3. Otherwise extract the name from the same line.
- * 4. Only reject names that exactly match totals/tax/payment words.
+ * 1. Classify each line (standalone price / qty / skip / qty×price / inline / name).
+ * 2. Accumulate name lines until prices appear.
+ * 3. When a new name appears after prices, finalize the previous item.
+ * 4. Use the LAST price in each block as the line total.
  */
 export function parseReceiptText(rawText: string): BillItem[] {
     const lines = rawText.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
     const items: BillItem[] = [];
-    let prevTextLine = ''; // last line that had no extractable price (potential item name)
+    let currentName = '';
+    let prices: number[] = [];
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+    function finalizeItem() {
+        if (currentName && prices.length > 0) {
+            const total = prices[prices.length - 1]; // last price = line total
+            const cleaned = cleanItemName(currentName);
+            if (cleaned.length >= 2 && total > 0 && !isRejectName(cleaned)) {
+                items.push({
+                    id: generateId(),
+                    name: cleaned,
+                    price: Math.round(total * 100) / 100,
+                    assignedTo: [],
+                });
+            }
+        }
+        currentName = '';
+        prices = [];
+    }
 
-        // Skip separator lines (---, ===, ***)
-        if (/^[-=*_]{3,}$/.test(line)) continue;
-
-        // Try to find a price (R xx.xx or just xx.xx) at the end of the line
-        const priceMatch = findTrailingPrice(line);
-
-        if (!priceMatch) {
-            // No price on this line → remember it as a potential item name
-            prevTextLine = line;
+    for (const line of lines) {
+        // 1. Standalone price: "R 59.99", "R. 59.99", "R59,99"
+        if (/^R\s*\.?\s*\d+[.,]\d{2}\s*$/.test(line)) {
+            const p = extractPrice(line);
+            if (p > 0) prices.push(p);
             continue;
         }
 
-        const { textBefore, price } = priceMatch;
+        // 2. Qty indicator alone: "Qty 1", "Qty 2"
+        if (/^Qty\s*\d+$/i.test(line)) {
+            continue;
+        }
 
-        // Decide the item name
-        let name = '';
+        // 3. Skip lines (headers, promos, weights, separators)
+        if (isSkipLine(line)) continue;
 
-        // Check if this is a quantity line: "2 @ 19.50  39.00" or "1 x Coke  28.00"
-        const qtyLine = isQuantityLine(textBefore);
-        if (qtyLine) {
-            // Item name from the quantity line itself (e.g. "2 x Coke" → "Coke")
-            if (qtyLine.inlineName && qtyLine.inlineName.length >= 2) {
-                name = qtyLine.inlineName;
-            } else {
-                // Item name from the **previous** line
-                name = prevTextLine;
+        // 4. Qty × price line: "2 @ 16.99  33.98" or "2 @ 16.99"
+        const qtyPriceMatch = line.match(
+            /^(\d+)\s*[@×xX]\s*R?\s*(\d+[.,]\d{2})(?:\s+.*?(\d+[.,]\d{2}))?\s*$/
+        );
+        if (qtyPriceMatch) {
+            const qty = parseInt(qtyPriceMatch[1], 10);
+            const unit = parsePrice(qtyPriceMatch[2]);
+            const total = qtyPriceMatch[3]
+                ? parsePrice(qtyPriceMatch[3])
+                : Math.round(unit * qty * 100) / 100;
+            if (total > 0) prices.push(total);
+            continue;
+        }
+
+        // 5. Inline name + price: "Burger  R89.90" or "Burger  89.90"
+        const inlineMatch = line.match(
+            /^(.{2,})(?:\s+R\s*|\s{2,})(\d+[.,]\d{2})\s*$/
+        );
+        if (inlineMatch) {
+            const inlineName = inlineMatch[1].trim();
+            const inlinePrice = parsePrice(inlineMatch[2]);
+            if (inlineName.length >= 2 && inlinePrice > 0 && !isRejectName(inlineName)) {
+                finalizeItem();
+                items.push({
+                    id: generateId(),
+                    name: cleanItemName(inlineName),
+                    price: inlinePrice,
+                    assignedTo: [],
+                });
             }
-        } else {
-            // Single-line: name and price on the same line
-            name = textBefore;
+            continue;
         }
 
-        // Clean up the name
-        name = cleanName(name);
-
-        // Validate
-        if (name.length >= 2 && price > 0 && !isRejectName(name)) {
-            items.push({
-                id: generateId(),
-                name,
-                price,
-                assignedTo: [],
-            });
+        // 6. Name line — if we already have prices, this starts a new item
+        if (prices.length > 0) {
+            finalizeItem();
         }
-
-        // After extracting a priced line, reset prevTextLine so we don't
-        // accidentally reuse a name for the next item.
-        prevTextLine = '';
+        currentName = currentName ? currentName + ' ' + line : line;
     }
+
+    // Finalize last item
+    finalizeItem();
 
     return items;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-/**
- * Find a trailing price on a line. Returns the text before the price and
- * the numeric price value. The *last* decimal number on the line wins
- * (handles "2 @ 19.50  39.00" → we want 39.00, which is the line total).
- */
-function findTrailingPrice(line: string): { textBefore: string; price: number } | null {
-    // Match the LAST occurrence of a price-like number at the end of the line.
-    // Accepts optional R prefix: "R39.00", "R 39,00", "39.00"
-    const m = line.match(/^(.+?)\s+R?\s*(\d+[.,]\d{2})\s*$/);
-    if (!m) return null;
-
-    let textBefore = m[1].trim();
-    const price = parsePrice(m[2]);
-    if (price <= 0) return null;
-
-    // If there are MULTIPLE prices on the line (e.g. "2 @ 19.50  39.00"),
-    // the regex already captured the last one (39.00). The textBefore is
-    // "2 @ 19.50" which we'll handle in isQuantityLine.
-
-    return { textBefore, price };
+/** Extract the first decimal price from a line. */
+function extractPrice(line: string): number {
+    const m = line.match(/(\d+[.,]\d{2})/);
+    return m ? parsePrice(m[1]) : 0;
 }
 
-/**
- * Detect if text looks like a quantity indicator:
- *   "2 @"            →  qty line, no inline name
- *   "2 @ 19.50"      →  qty line, no inline name (unit price left over)
- *   "2 x Coke"       →  qty line, inline name "Coke"
- *   "1@ R19.50"      →  qty line, no inline name
- */
-function isQuantityLine(
-    text: string
-): { inlineName: string } | null {
-    // "2 @ 19.50" or "2@ 19.50" or "2 @19.50" or just "2 @"
-    const atMatch = text.match(/^\d+\s*@\s*R?\s*\d*[.,]?\d*\s*$/i);
-    if (atMatch) return { inlineName: '' };
+/** Lines to skip entirely. */
+function isSkipLine(line: string): boolean {
+    const l = line.toLowerCase().trim();
 
-    // "2 @ 19.50" with possible trailing text
-    const atMatch2 = text.match(/^\d+\s*@\s*R?\s*\d+[.,]\d{2}\s+(.+)$/i);
-    if (atMatch2) return { inlineName: atMatch2[1].trim() };
+    // Separators: "-----", "=====", "*****"
+    if (/^[-=*_]{3,}$/.test(l)) return true;
 
-    // "2 @" alone (no unit price)
-    const atSimple = text.match(/^\d+\s*@\s*$/);
-    if (atSimple) return { inlineName: '' };
+    // Pure weight/size: "320g", "200g", "500ml"
+    if (/^\d+\s*(g|kg|ml|l|cl)\s*$/i.test(l)) return true;
 
-    // "2x Coke" or "2 x Coke" or "2 X Coke"
-    const xMatch = text.match(/^\d+\s*[xX×]\s+(.+)$/);
-    if (xMatch) return { inlineName: xMatch[1].trim() };
+    // Promo/discount lines
+    if (l.startsWith('**') || /^-\s*R\s*\d/i.test(l)) return true;
 
-    // "2x" alone
-    const xAlone = text.match(/^\d+\s*[xX×]\s*$/);
-    if (xAlone) return { inlineName: '' };
+    // Known headers & metadata
+    const skip = [
+        'product detail', 'price (per item)', 'total', 'subtotal',
+        'sub total', 'nett total', 'grand total', 'vat', 'btw', 'tax',
+        'cash', 'card', 'visa', 'mastercard', 'debit', 'credit',
+        'eft', 'balance', 'balans', 'rounding', 'round', 'ronding',
+        'amount due', 'amount tendered', 'tender', 'payment',
+        'incl vat', 'excl vat', 'tax invoice', 'receipt',
+        'change', 'wisselgeld', 'pack',
+    ];
+    if (skip.includes(l)) return true;
 
-    return null;
+    // Starts with known total/tax/metadata words
+    const starts = [
+        'total ', 'totaal ', 'subtotal ', 'sub total ',
+        'vat ', 'tax ', 'balance ', 'change ',
+        'amount due', 'amount tendered', 'auth code',
+        'ref no', 'reference', 'date ', 'time ', 'store ',
+        'tel ', 'cashier', 'till ', 'receipt no', 'invoice no',
+    ];
+    if (starts.some((s) => l.startsWith(s))) return true;
+
+    return false;
 }
 
-/**
- * Clean an extracted item name.
- */
-function cleanName(raw: string): string {
+/** Clean up an item name. */
+function cleanItemName(raw: string): string {
     return raw
-        .replace(/[.…]+$/, '')          // trailing dots
-        .replace(/^\d+\s*[xX×@]\s*/, '') // leading "2x " or "2 @ "
-        .replace(/R?\s*\d+[.,]\d{2}$/, '') // trailing unit price left-over
-        .replace(/\s+/g, ' ')           // normalise whitespace
-        .replace(/^[\s\-*#]+/, '')       // leading dashes / asterisks
-        .replace(/[\s\-*#]+$/, '')       // trailing dashes / asterisks
+        .replace(/^\d+\.\s*/, '')           // leading "1. "
+        .replace(/^\d+\s*[xX×@]\s*/, '')   // leading "2x " or "2 @ "
+        .replace(/R?\s*\d+[.,]\d{2}$/, '')  // trailing price leftover
+        .replace(/[.…]+$/, '')              // trailing dots
+        .replace(/\s+/g, ' ')              // normalize whitespace
+        .replace(/^[\s\-*#]+/, '')          // leading decorations
+        .replace(/[\s\-*#]+$/, '')          // trailing decorations
         .trim();
 }
 
-/**
- * Should this name be rejected? Only exact matches and starts-with for
- * totals, tax, and payment words. We keep this TIGHT to avoid false negatives.
- */
+/** Should this name be rejected? */
 function isRejectName(name: string): boolean {
-    const lower = name.toLowerCase();
+    const l = name.toLowerCase().trim();
 
-    // Pure numbers
-    if (/^\d[\d\s/\-.,]*$/.test(lower)) return true;
+    // Pure numbers / dates
+    if (/^\d[\d\s/\-.,]*$/.test(l)) return true;
 
-    // Exact rejects
+    // Exact reject words
     const exact = [
         'total', 'totaal', 'subtotal', 'sub total', 'nett total',
         'grand total', 'vat', 'btw', 'tax', 'change', 'wisselgeld',
@@ -247,16 +261,15 @@ function isRejectName(name: string): boolean {
         'amount due', 'amount tendered', 'tender', 'payment',
         'subtotaal', 'incl vat', 'excl vat',
     ];
-    if (exact.includes(lower)) return true;
+    if (exact.includes(l)) return true;
 
     // Starts-with rejects
     const starts = [
-        'total ', 'totaal ', 'subtotal ', 'sub total',
+        'total ', 'totaal ', 'subtotal ', 'sub total ',
         'vat ', 'tax ', 'change ', 'balance ',
         'amount due', 'amount tendered', 'auth code',
-        'ref no', 'reference',
     ];
-    if (starts.some((p) => lower.startsWith(p))) return true;
+    if (starts.some((s) => l.startsWith(s))) return true;
 
     return false;
 }
