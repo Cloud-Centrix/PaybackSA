@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Colors, FontSize, Shadow } from '../theme';
+import { useOnboardingStore } from '../store/onboardingStore';
 
 // Bill screens
 import {
@@ -25,9 +26,13 @@ import {
 // Settings
 import { SettingsScreen } from '../screens/settings';
 
+// Onboarding
+import { OnboardingScreen } from '../screens/onboarding';
+
 const BillStack = createStackNavigator();
 const TripStack = createStackNavigator();
 const SettingsStack = createStackNavigator();
+const RootStack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function BillsNavigator() {
@@ -62,6 +67,20 @@ function SettingsNavigator() {
 }
 
 export function AppNavigator() {
+    const onboardingCompleted = useOnboardingStore((s) => s.completed);
+
+    return (
+        <RootStack.Navigator screenOptions={{ headerShown: false }}>
+            {!onboardingCompleted ? (
+                <RootStack.Screen name="Onboarding" component={OnboardingScreen} />
+            ) : (
+                <RootStack.Screen name="Main" component={MainTabs} />
+            )}
+        </RootStack.Navigator>
+    );
+}
+
+function MainTabs() {
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
