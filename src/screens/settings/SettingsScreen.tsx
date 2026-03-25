@@ -23,6 +23,7 @@ export function SettingsScreen() {
     const lastTapRef = useRef(0);
 
     const handleVersionTap = () => {
+        if (!__DEV__) return;
         const now = Date.now();
         if (now - lastTapRef.current > 2000) tapCountRef.current = 0;
         lastTapRef.current = now;
