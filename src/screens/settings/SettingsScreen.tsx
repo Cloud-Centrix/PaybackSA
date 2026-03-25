@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -17,8 +17,26 @@ import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../theme
 
 export function SettingsScreen() {
     const { settings, updateSettings } = useSettingsStore();
-    const { isPremium } = usePremiumStore();
+    const { isPremium, unlock } = usePremiumStore();
     const [showPremiumGate, setShowPremiumGate] = useState(false);
+    const tapCountRef = useRef(0);
+    const lastTapRef = useRef(0);
+
+    const handleVersionTap = () => {
+        const now = Date.now();
+        if (now - lastTapRef.current > 2000) tapCountRef.current = 0;
+        lastTapRef.current = now;
+        tapCountRef.current += 1;
+        if (tapCountRef.current >= 7) {
+            tapCountRef.current = 0;
+            if (isPremium) {
+                Alert.alert('Dev Mode', 'Premium is already active.');
+            } else {
+                unlock();
+                Alert.alert('Dev Mode', 'Premium unlocked for testing.');
+            }
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -120,7 +138,9 @@ export function SettingsScreen() {
                     {/* About */}
                     <Card style={styles.aboutCard}>
                         <Text style={styles.aboutTitle}>PayBack SA</Text>
-                        <Text style={styles.aboutVersion}>Version 1.0.0</Text>
+                        <TouchableOpacity onPress={handleVersionTap} activeOpacity={1}>
+                            <Text style={styles.aboutVersion}>Version 1.0.0</Text>
+                        </TouchableOpacity>
                         <Text style={styles.aboutDescription}>
                             Split bills and track trip expenses with friends. Made in South Africa 🇿🇦
                         </Text>

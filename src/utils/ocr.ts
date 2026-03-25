@@ -69,12 +69,11 @@ async function callVisionAPI(imageUri: string): Promise<string> {
 }
 
 /**
- * Scan a receipt image and return parsed bill items + raw OCR text.
+ * Scan a receipt image and return parsed bill items.
  */
-export async function scanReceipt(imageUri: string): Promise<{ items: BillItem[]; rawText: string }> {
+export async function scanReceipt(imageUri: string): Promise<BillItem[]> {
     const rawText = await callVisionAPI(imageUri);
-    const items = parseReceiptText(rawText);
-    return { items, rawText };
+    return parseReceiptText(rawText);
 }
 
 /**

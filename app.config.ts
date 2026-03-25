@@ -37,6 +37,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-asset',
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/splash-icon.png',
+        imageWidth: 200,
+        resizeMode: 'contain',
+        backgroundColor: '#F8F6F2',
+      },
+    ],
   ],
   extra: {
     revenueCatAndroidKey: process.env.REVENUCAT_ANDROID_API_KEY,

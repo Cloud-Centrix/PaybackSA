@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
@@ -6,9 +6,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import * as Sentry from '@sentry/react-native';
+import * as SplashScreen from 'expo-splash-screen';
 import Constants from 'expo-constants';
 import { AppNavigator } from './src/navigation';
 import { usePremiumStore } from './src/store/premiumStore';
+
+SplashScreen.preventAutoHideAsync();
 
 const extra = Constants.expoConfig?.extra ?? {};
 
@@ -73,26 +76,39 @@ const ebStyles = StyleSheet.create({
 
 export default function App() {
   const checkEntitlement = usePremiumStore((s) => s.checkEntitlement);
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
-    const initRevenueCat = async () => {
-      if (Platform.OS === 'web') return;
-      Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.VERBOSE : LOG_LEVEL.ERROR);
-      const apiKey =
-        Platform.OS === 'ios'
-          ? extra.revenueCatIosKey
-          : extra.revenueCatAndroidKey;
-      if (apiKey) {
-        Purchases.configure({ apiKey });
-        // Sync premium status in background (uses cache if offline)
-        checkEntitlement();
+    const init = async () => {
+      try {
+        if (Platform.OS !== 'web') {
+          Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.VERBOSE : LOG_LEVEL.ERROR);
+          const apiKey =
+            Platform.OS === 'ios'
+              ? extra.revenueCatIosKey
+              : extra.revenueCatAndroidKey;
+          if (apiKey) {
+            Purchases.configure({ apiKey });
+            await checkEntitlement();
+          }
+        }
+      } finally {
+        setAppReady(true);
       }
     };
-    initRevenueCat();
+    init();
   }, []);
 
+  const onLayoutRootView = useCallback(async () => {
+    if (appReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [appReady]);
+
+  if (!appReady) return null;
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <ErrorBoundary>
         <SafeAreaProvider>
           <NavigationContainer>

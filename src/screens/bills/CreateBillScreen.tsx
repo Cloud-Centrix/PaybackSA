@@ -57,12 +57,11 @@ export function CreateBillScreen() {
     const handlePayerContinue = (target: 'scan' | 'manual') => {
         if (!currentBill?.paidBy) return;
         if (target === 'scan') {
-            // TODO: Re-enable premium check before production
-            // if (!isPremium) {
-            //     setPremiumFeature('OCR receipt scanning');
-            //     setShowPremiumGate(true);
-            //     return;
-            // }
+            if (!isPremium) {
+                setPremiumFeature('OCR receipt scanning');
+                setShowPremiumGate(true);
+                return;
+            }
             navigation.navigate('ScanReceipt');
         } else {
             navigation.navigate('EditItems');
