@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,8 @@ import {
     Alert,
     Image,
     ActivityIndicator,
+    Linking,
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -21,6 +23,15 @@ export function ScanReceiptScreen() {
     const { setItems } = useBillStore();
     const [photo, setPhoto] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
+    const cancelledRef = useRef(false);
+
+    const openSettings = () => {
+        if (Platform.OS === 'ios') {
+            Linking.openURL('app-settings:');
+        } else {
+            Linking.openSettings();
+        }
+    };
 
     const handleTakePhoto = async () => {
         try {
@@ -28,7 +39,11 @@ export function ScanReceiptScreen() {
             if (status !== 'granted') {
                 Alert.alert(
                     'Permission needed',
-                    'Camera access is required to take photos of receipts.'
+                    'Camera access is required to take photos of receipts. Please enable it in Settings.',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Open Settings', onPress: openSettings },
+                    ]
                 );
                 return;
             }
@@ -60,10 +75,18 @@ export function ScanReceiptScreen() {
         }
     };
 
+    const handleCancel = () => {
+        cancelledRef.current = true;
+        setProcessing(false);
+        setPhoto(null);
+    };
+
     const processImage = async (uri: string) => {
+        cancelledRef.current = false;
         setProcessing(true);
         try {
             const items = await scanReceipt(uri);
+            if (cancelledRef.current) return;
             if (items.length === 0) {
                 Alert.alert(
                     'No Items Found',
@@ -103,6 +126,13 @@ export function ScanReceiptScreen() {
                     <View style={styles.processingOverlay}>
                         <ActivityIndicator size="large" color={Colors.teal} />
                         <Text style={styles.processingText}>Reading your receipt...</Text>
+                        <Button
+                            title="Cancel"
+                            onPress={handleCancel}
+                            variant="ghost"
+                            size="sm"
+                            style={{ marginTop: Spacing.md }}
+                        />
                     </View>
                 </View>
             </SafeAreaView>

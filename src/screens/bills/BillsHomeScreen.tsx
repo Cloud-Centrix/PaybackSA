@@ -89,7 +89,7 @@ export function BillsHomeScreen() {
                     {bill.people.slice(0, 4).map((person) => (
                         <View key={person.id} style={styles.miniAvatar}>
                             <Text style={styles.miniAvatarText}>
-                                {person.name[0].toUpperCase()}
+                                {(person.name?.[0] ?? '?').toUpperCase()}
                             </Text>
                         </View>
                     ))}

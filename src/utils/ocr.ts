@@ -1,8 +1,25 @@
 import { BillItem } from '../types';
 import { generateId, parsePrice } from './helpers';
 import Constants from 'expo-constants';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 const VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate';
+const OCR_TIMEOUT_MS = 20000; // 20 seconds
+
+/** Max image dimension before resizing for OCR upload */
+const MAX_IMAGE_DIMENSION = 1600;
+
+/**
+ * Resize image if too large to keep OCR fast and reduce API costs.
+ */
+async function resizeIfNeeded(uri: string): Promise<string> {
+    const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: MAX_IMAGE_DIMENSION } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    return result.uri;
+}
 
 /**
  * Read an image file as base64 using XMLHttpRequest (works on all platforms).
@@ -29,6 +46,18 @@ function readImageAsBase64(uri: string): Promise<string> {
 }
 
 /**
+ * Race a promise against a timeout.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+    return Promise.race([
+        promise,
+        new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(message)), ms)
+        ),
+    ]);
+}
+
+/**
  * Send an image to Google Cloud Vision API and return the detected text.
  */
 async function callVisionAPI(imageUri: string): Promise<string> {
@@ -37,21 +66,28 @@ async function callVisionAPI(imageUri: string): Promise<string> {
         throw new Error('Google Cloud Vision API key not configured');
     }
 
-    // Read the image file as base64
-    const base64 = await readImageAsBase64(imageUri);
+    // Resize large images before upload
+    const optimizedUri = await resizeIfNeeded(imageUri);
 
-    const response = await fetch(`${VISION_API_URL}?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            requests: [
-                {
-                    image: { content: base64 },
-                    features: [{ type: 'TEXT_DETECTION', maxResults: 1 }],
-                },
-            ],
+    // Read the image file as base64
+    const base64 = await readImageAsBase64(optimizedUri);
+
+    const response = await withTimeout(
+        fetch(`${VISION_API_URL}?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                requests: [
+                    {
+                        image: { content: base64 },
+                        features: [{ type: 'TEXT_DETECTION', maxResults: 1 }],
+                    },
+                ],
+            }),
         }),
-    });
+        OCR_TIMEOUT_MS,
+        'Scan timed out. Please try again with a clearer photo.'
+    );
 
     if (!response.ok) {
         throw new Error(`Vision API error: ${response.status}`);

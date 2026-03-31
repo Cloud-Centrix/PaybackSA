@@ -102,12 +102,12 @@ export function BillSummaryScreen() {
     };
 
     const renderShare = ({ item: share }: { item: PersonShare }) => {
-        const initials = share.person.name
+        const initials = (share.person.name || '?')
             .split(' ')
-            .map((w) => w[0])
+            .map((w) => w[0] ?? '')
             .join('')
             .toUpperCase()
-            .slice(0, 2);
+            .slice(0, 2) || '?';
 
         const isPaid = currentBill?.paidBack?.[share.person.id] ?? false;
 

@@ -27,7 +27,7 @@ const PREMIUM_FEATURES = [
 ];
 
 export function PremiumGate({ visible, onClose, feature }: PremiumGateProps) {
-    const { purchasePremium, restore } = usePremiumStore();
+    const { purchasePremium, restore, priceLabel } = usePremiumStore();
     const [loading, setLoading] = useState(false);
 
     const handleUpgrade = async () => {
@@ -102,7 +102,7 @@ export function PremiumGate({ visible, onClose, feature }: PremiumGateProps) {
                     {/* Price */}
                     <View style={styles.priceContainer}>
                         <Text style={styles.priceLabel}>Once-off payment</Text>
-                        <Text style={styles.price}>R49.99</Text>
+                        <Text style={styles.price}>{priceLabel}</Text>
                         <Text style={styles.priceNote}>No subscriptions. Yours forever.</Text>
                     </View>
 

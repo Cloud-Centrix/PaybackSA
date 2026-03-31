@@ -40,7 +40,7 @@ export function OnboardingScreen() {
 
     const { updateSettings } = useSettingsStore();
     const completeOnboarding = useOnboardingStore((s) => s.complete);
-    const { purchasePremium, restore } = usePremiumStore();
+    const { purchasePremium, restore, priceLabel } = usePremiumStore();
 
     const currentIndex = STEPS.indexOf(step);
 
@@ -238,7 +238,7 @@ export function OnboardingScreen() {
 
                 <View style={styles.priceCard}>
                     <Text style={styles.priceLabel}>Once-off payment</Text>
-                    <Text style={styles.price}>R49.99</Text>
+                    <Text style={styles.price}>{priceLabel}</Text>
                     <Text style={styles.priceNote}>No subscriptions. Yours forever.</Text>
                 </View>
             </ScrollView>

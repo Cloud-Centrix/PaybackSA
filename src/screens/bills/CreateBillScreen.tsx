@@ -12,10 +12,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useBillStore, usePremiumStore } from '../../store';
-
-const FREE_PERSON_LIMIT = 3;
 import { ScreenHeader, Input, Button, PersonChip, Card, PremiumGate } from '../../components';
 import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../theme';
+import { FREE_PERSON_LIMIT } from '../../types';
 import type { Person } from '../../types';
 
 export function CreateBillScreen() {
@@ -130,7 +129,7 @@ export function CreateBillScreen() {
                             >
                                 <View style={[styles.payerAvatar, isSelected && styles.payerAvatarSelected]}>
                                     <Text style={[styles.payerAvatarText, isSelected && styles.payerAvatarTextSelected]}>
-                                        {person.name[0].toUpperCase()}
+                                        {(person.name?.[0] ?? '?').toUpperCase()}
                                     </Text>
                                 </View>
                                 <Text style={[styles.payerName, isSelected && styles.payerNameSelected]}>

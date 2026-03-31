@@ -1,3 +1,6 @@
+/** Max people a free user can add per bill/trip */
+export const FREE_PERSON_LIMIT = 3;
+
 export interface Person {
     id: string;
     name: string;

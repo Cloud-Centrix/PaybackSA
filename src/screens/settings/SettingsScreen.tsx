@@ -17,7 +17,7 @@ import { Colors, Spacing, FontSize, FontWeight, BorderRadius } from '../../theme
 
 export function SettingsScreen() {
     const { settings, updateSettings } = useSettingsStore();
-    const { isPremium, unlock } = usePremiumStore();
+    const { isPremium, unlock, priceLabel } = usePremiumStore();
     const [showPremiumGate, setShowPremiumGate] = useState(false);
     const tapCountRef = useRef(0);
     const lastTapRef = useRef(0);
@@ -77,7 +77,7 @@ export function SettingsScreen() {
                                     <Ionicons name="chevron-forward" size={20} color={Colors.gold} />
                                 </View>
                                 <View style={styles.premiumPriceBadge}>
-                                    <Text style={styles.premiumPrice}>R49.99</Text>
+                                    <Text style={styles.premiumPrice}>{priceLabel}</Text>
                                 </View>
                             </Card>
                         </TouchableOpacity>

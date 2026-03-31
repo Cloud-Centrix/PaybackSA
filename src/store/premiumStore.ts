@@ -2,11 +2,11 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform, Alert } from 'react-native';
-
-const FREE_PERSON_LIMIT = 3;
+import { FREE_PERSON_LIMIT } from '../types';
 
 interface PremiumStore {
     isPremium: boolean;
+    priceLabel: string;
     unlock: () => void;
     restore: () => Promise<boolean>;
     purchasePremium: () => Promise<boolean>;
@@ -18,6 +18,7 @@ export const usePremiumStore = create<PremiumStore>()(
     persist(
         (set, get) => ({
             isPremium: false,
+            priceLabel: 'R49.99',
             unlock: () => set({ isPremium: true }),
 
             /** Silently sync premium status with RevenueCat — uses cached state on failure */
@@ -28,8 +29,15 @@ export const usePremiumStore = create<PremiumStore>()(
                     const customerInfo = await Purchases.getCustomerInfo();
                     const hasPremium = customerInfo.entitlements.active['premium'] !== undefined;
                     set({ isPremium: hasPremium });
+
+                    // Fetch live price from RevenueCat
+                    const offerings = await Purchases.getOfferings();
+                    const pkg = offerings.current?.availablePackages[0];
+                    if (pkg?.product?.priceString) {
+                        set({ priceLabel: pkg.product.priceString });
+                    }
                 } catch {
-                    // Offline or RevenueCat unavailable — keep cached isPremium value
+                    // Offline or RevenueCat unavailable — keep cached values
                 }
             },
 
