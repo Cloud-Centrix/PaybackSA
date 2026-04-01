@@ -107,11 +107,11 @@ export function BillsHomeScreen() {
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.greeting}>PayBack SA</Text>
+                    <Text style={styles.greeting}>Bill Mode</Text>
                     <Text style={styles.subtitle}>Split bills with friends</Text>
                 </View>
                 <View style={styles.logo}>
-                    <Text style={styles.logoText}>🇿🇦</Text>
+                    <Text style={styles.logoText}>🧾</Text>
                 </View>
             </View>
 
